@@ -5,7 +5,7 @@ Play a list of Quran verses from any surahs, in order, on repeat. Built for memo
 Two tabs:
 
 - **Quran**: verses recited by a chosen reciter.
-- **Hadith**: 31 hadith from the first chapters of the HGWC 1st-year muthoon, read aloud by the phone's own Arabic text-to-speech voice. Filter by topic, set speed, repeats and pause, and optionally pause at punctuation or read without tashkeel.
+- **Hadith**: the first 10 of Imam an-Nawawi's 40 hadith (with narrator and source) and 31 hadith from the first chapters of the HGWC 1st-year muthoon, read aloud by the phone's own Arabic text-to-speech voice. Filter by topic, set speed, repeats and pause, and optionally pause at punctuation or read without tashkeel.
 
 ## Quran tab
 
