@@ -15,19 +15,20 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Noto+Sans+Tamil:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Noto+Sans+Tamil:wght@400;500;600&display=swap">
 <style>
 /* Layout: one narrow column; player with large car-friendly controls first, then the verse queue, then settings */
 :root{
   --bg:#f2f5f3; --surface:#ffffff; --ink:#15211d; --muted:#5a6a64; --line:#d5ddd9;
-  --accent:#0e6b53; --accent-ink:#ffffff; --accent-soft:#e1efe9; --warn:#a1382a; --warn-soft:#f8e6e2;
+  --accent:#0e6b53; --accent-ink:#ffffff; --accent-soft:#e1efe9; --warn:#a1382a; --warn-soft:#f8e6e2; --mark:#fff1c7;
+  --arabic:"Amiri","Noto Naskh Arabic","Geeza Pro","Traditional Arabic",serif;
   --sans:"IBM Plex Sans","Noto Sans Tamil",system-ui,-apple-system,"Segoe UI",sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
   color-scheme:light;
 }
 @media (prefers-color-scheme:dark){:root{
   --bg:#0e1412; --surface:#16201c; --ink:#e4ece9; --muted:#91a39c; --line:#28352f;
-  --accent:#3dbd92; --accent-ink:#04120d; --accent-soft:#163128; --warn:#ff8b78; --warn-soft:#3a1c17; color-scheme:dark}}
+  --accent:#3dbd92; --accent-ink:#04120d; --accent-soft:#163128; --warn:#ff8b78; --warn-soft:#3a1c17; --mark:#3b3413; color-scheme:dark}}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;
@@ -41,7 +42,30 @@ html[lang="ta"] body{font-family:"Noto Sans Tamil","IBM Plex Sans",system-ui,san
 .lang button{font:inherit;font-size:13px;font-weight:500;border:0;background:none;color:var(--muted);padding:5px 12px;border-radius:999px;cursor:pointer}
 .lang button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
 .lang button[lang="ta"]{font-family:"Noto Sans Tamil",system-ui,sans-serif}
-.tagline{margin:-14px 0 0;color:var(--muted)}
+.tagline{margin:0;color:var(--muted)}
+.tabs{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:4px;margin-top:-8px}
+.tabs button{font:inherit;font-size:15px;font-weight:600;border:0;background:none;color:var(--muted);padding:9px 12px;border-radius:9px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink)}
+.pane{display:flex;flex-direction:column;gap:22px}
+
+.har{font-family:var(--arabic);font-size:24px;line-height:2;direction:rtl;text-align:right;margin:0;min-height:3em;overflow-wrap:anywhere}
+.har .seg{border-radius:4px;transition:background .15s}
+.har .seg.now{background:var(--mark)}
+.seg-ctl{display:flex;flex-wrap:wrap;gap:6px}
+.seg-ctl button{font:inherit;font-size:13.5px;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:6px 12px;border-radius:999px;cursor:pointer}
+.seg-ctl button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.seg-ctl small{font-size:12px;opacity:.75;margin-left:4px;font-variant-numeric:tabular-nums}
+ol.list.hl li{grid-template-columns:2rem 1fr}
+.hl .ref{font-family:var(--mono);font-size:13px;font-weight:500}
+.hl .ref span{color:var(--muted);font-family:var(--sans);font-weight:400;margin-left:6px}
+.hl .snip{font-family:var(--arabic);font-size:18px;direction:rtl;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.hl li>div{min-width:0}
+.speed{display:flex;align-items:center;gap:10px;height:44px}
+.speed input{flex:1;border:0;background:none;accent-color:var(--accent)}
+.speed output{font-family:var(--mono);font-size:14px;font-variant-numeric:tabular-nums;min-width:3.2em;text-align:right}
+.checks{display:flex;flex-direction:column;gap:10px}
+.checks label{display:flex;align-items:center;gap:10px;margin:0;font-size:15px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--ink);cursor:pointer}
+.checks input{width:18px;height:18px;accent-color:var(--accent)}
 
 .player{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 18px 16px;display:flex;flex-direction:column;gap:14px}
 .np-label{font-size:12px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
@@ -107,6 +131,12 @@ ol.list li.cur .idx{color:var(--accent);font-weight:600}
       <button type="button" id="langTa" lang="ta" aria-pressed="false">தமிழ்</button>
     </div>
   </div>
+  <div class="tabs" role="tablist">
+    <button type="button" role="tab" id="tabQ" aria-controls="paneQ" aria-selected="true" data-i18n="tabQuran"></button>
+    <button type="button" role="tab" id="tabH" aria-controls="paneH" aria-selected="false" data-i18n="tabHadith"></button>
+  </div>
+
+  <div class="pane" id="paneQ" role="tabpanel" aria-labelledby="tabQ">
   <p class="tagline" data-i18n="tagline"></p>
 
   <section class="player" aria-live="polite">
@@ -155,6 +185,70 @@ ol.list li.cur .idx{color:var(--accent);font-weight:600}
     <p data-i18n="tipLoop"></p>
     <p data-i18n="tipData"></p>
   </section>
+  </div>
+
+  <div class="pane" id="paneH" role="tabpanel" aria-labelledby="tabH" hidden>
+  <p class="tagline" data-i18n="hTagline"></p>
+
+  <section class="player">
+    <div class="np-label" data-i18n="nowPlaying"></div>
+    <div class="np-head"><span class="np-name" id="hRef">–</span></div>
+    <p class="har" id="hText" lang="ar"></p>
+    <div class="np-meta"><span class="chip" id="hTopic"></span><span class="chip" id="hPos"></span><span class="chip" id="hRep"></span></div>
+    <div class="controls">
+      <button class="ctl" id="hPrev" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg></button>
+      <button class="ctl play" id="hPlay" type="button"><svg viewBox="0 0 24 24" aria-hidden="true" id="hPlayIcon"><path d="M7 4v16l13-8z"/></svg></button>
+      <button class="ctl" id="hNext" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 5h2v14h-2zM4 5v14l11-7z"/></svg></button>
+    </div>
+    <p class="status" id="hStatus" role="status"></p>
+  </section>
+
+  <section>
+    <div class="seg-ctl" id="hTopics" role="group"></div>
+  </section>
+
+  <section>
+    <div class="summary"><strong id="hCount"></strong><span data-i18n="hTap"></span></div>
+    <ol class="list hl" id="hList"></ol>
+  </section>
+
+  <section>
+    <label for="hVoice" data-i18n="voice"></label>
+    <select id="hVoice"></select>
+  </section>
+
+  <section class="row">
+    <div>
+      <label for="hRate" data-i18n="speed"></label>
+      <div class="speed"><input type="range" id="hRate" min="0.4" max="1.4" step="0.05" value="0.8"><output id="hRateVal" for="hRate"></output></div>
+    </div>
+    <div>
+      <span class="lbl" id="hRepLbl" data-i18n="hPlayEach"></span>
+      <div class="stepper" role="group" aria-labelledby="hRepLbl">
+        <button type="button" id="hRepDown">−</button>
+        <input id="hRepeats" type="number" inputmode="numeric" min="1" max="50" value="3">
+        <button type="button" id="hRepUp">+</button>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <label for="hGap" data-i18n="gap"></label>
+    <select id="hGap"></select>
+  </section>
+
+  <section class="checks">
+    <label><input type="checkbox" id="hChunk" checked> <span data-i18n="chunk"></span></label>
+    <label><input type="checkbox" id="hStrip"> <span data-i18n="strip"></span></label>
+  </section>
+
+  <section class="tips">
+    <h2 data-i18n="hTipsTitle"></h2>
+    <p data-i18n="hTipScreen"></p>
+    <p data-i18n="hTipVoice"></p>
+    <p data-i18n="hTipCheck"></p>
+  </section>
+  </div>
 </div>
 
 <script>
@@ -176,7 +270,22 @@ const I18N={
     tipData:"Audio streams from everyayah.com, so it uses mobile data. Pick a 64 kbps reciter to save data. Your list and settings stay saved on this phone.",
     loadErr:"Couldn't load this verse. Skipping to the next.",
     blocked:"Tap Play to start the audio.",
-    offline:"No connection. Playback will continue when the network returns."
+    offline:"No connection. Playback will continue when the network returns.",
+    tabQuran:"Quran", tabHadith:"Hadith",
+    hTagline:"Hadith from the first chapters of the HGWC 1st-year muthoon, read aloud by your phone's Arabic voice.",
+    topics:{all:"All",aqeedah:"Aqeedah",fiqh:"Fiqh",quran:"Quran",seerah:"Seerah"},
+    hPos:(i,n)=>`Hadith ${i} of ${n}`, hCount:n=>`${n} hadith`, hTap:"Tap a hadith to start from it",
+    hPrev:"Previous hadith", hPlayEach:"Play each", hTimes:"Times to play each hadith", hNext:"Next hadith",
+    voice:"Voice", speed:"Speed", gap:"Pause between plays", gapNone:"No pause", sec:n=>`${n} ${n===1?"second":"seconds"}`,
+    chunk:"Pause at punctuation", strip:"Read without tashkeel",
+    onDevice:"on device", online:"online",
+    noVoice:"No Arabic voice on this phone. iPhone: Settings → Accessibility → Spoken Content → Voices → Arabic. Android: Settings → Text-to-speech → Google → Install voice data → Arabic. Then reload this page.",
+    noSpeech:"This browser can't read text aloud. Try Safari on iPhone or Chrome on Android.",
+    notInBook:"ref not in book",
+    hTipsTitle:"Listening tips",
+    hTipScreen:"Keep the screen on. Speech stops when the phone locks, so the page keeps the screen awake while playing.",
+    hTipVoice:"Voices marked on device work without mobile data. On iPhone, download the enhanced Arabic voice for clearer pronunciation.",
+    hTipCheck:"The Arabic was copied from the book with vowel marks added. Check each hadith against the book or your teacher."
   },
   ta:{
     tagline:"எந்த சூராவிலிருந்தும் வசனங்களைத் தேர்ந்தெடுங்கள். அவற்றை வரிசையாக, மீண்டும் மீண்டும் கேளுங்கள்.",
@@ -195,7 +304,22 @@ const I18N={
     tipData:"ஒலி everyayah.com-இலிருந்து ஸ்ட்ரீம் ஆவதால் மொபைல் டேட்டா தேவை. டேட்டாவைச் சேமிக்க 64 kbps ஓதுபவரைத் தேர்ந்தெடுங்கள். உங்கள் பட்டியலும் அமைப்புகளும் இந்த போனில் சேமிக்கப்படும்.",
     loadErr:"இந்த வசனத்தை ஏற்ற முடியவில்லை. அடுத்ததுக்குச் செல்கிறது.",
     blocked:"ஒலியைத் தொடங்க ஒலிக்கச் செய் என்பதைத் தட்டுங்கள்.",
-    offline:"இணைப்பு இல்லை. நெட்வொர்க் திரும்பியதும் ஒலி தொடரும்."
+    offline:"இணைப்பு இல்லை. நெட்வொர்க் திரும்பியதும் ஒலி தொடரும்.",
+    tabQuran:"குர்ஆன்", tabHadith:"ஹதீஸ்",
+    hTagline:"HGWC முதல் வருட முத்தூன் புத்தகத்தின் முதல் பாடங்களிலுள்ள ஹதீஸ்கள், உங்கள் போனின் அரபு குரலில்.",
+    topics:{all:"அனைத்தும்",aqeedah:"அகீதா",fiqh:"ஃபிக்ஹ்",quran:"குர்ஆன்",seerah:"ஸீரா"},
+    hPos:(i,n)=>`ஹதீஸ் ${i} / ${n}`, hCount:n=>`${n} ஹதீஸ்கள்`, hTap:"எந்த ஹதீஸிலிருந்தும் தொடங்க அதைத் தட்டுங்கள்",
+    hPrev:"முந்தைய ஹதீஸ்", hPlayEach:"ஒவ்வொரு ஹதீஸும் (முறை)", hTimes:"ஒவ்வொரு ஹதீஸும் ஒலிக்கும் முறை", hNext:"அடுத்த ஹதீஸ்",
+    voice:"குரல்", speed:"வேகம்", gap:"ஒவ்வொரு முறைக்கும் இடையே இடைவெளி", gapNone:"இடைவெளி இல்லை", sec:n=>`${n} வினாடி`,
+    chunk:"நிறுத்தக் குறிகளில் சற்று நிறுத்து", strip:"தஷ்கீல் இல்லாமல் வாசி",
+    onDevice:"போனில்", online:"ஆன்லைன்",
+    noVoice:"இந்த போனில் அரபு குரல் இல்லை. iPhone: Settings → Accessibility → Spoken Content → Voices → Arabic. Android: Settings → Text-to-speech → Google → Install voice data → Arabic. பிறகு இந்தப் பக்கத்தை மீண்டும் ஏற்றுங்கள்.",
+    noSpeech:"இந்த உலாவியால் உரையை வாசிக்க முடியாது. iPhone-ல் Safari அல்லது Android-ல் Chrome பயன்படுத்துங்கள்.",
+    notInBook:"புத்தகத்தில் ஆதாரம் இல்லை",
+    hTipsTitle:"கேட்கும் குறிப்புகள்",
+    hTipScreen:"திரையை அணைக்காதீர்கள். போன் பூட்டப்பட்டால் வாசிப்பு நின்றுவிடும். அதனால் ஒலிக்கும்போது இந்தப் பக்கம் திரையை விழிப்புடன் வைக்கும்.",
+    hTipVoice:"‘போனில்’ எனக் குறிக்கப்பட்ட குரல்களுக்கு மொபைல் டேட்டா தேவையில்லை. iPhone-ல் தெளிவான உச்சரிப்புக்கு enhanced அரபு குரலைப் பதிவிறக்குங்கள்.",
+    hTipCheck:"அரபு உரை புத்தகத்திலிருந்து எடுக்கப்பட்டு உயிர்க்குறிகள் சேர்க்கப்பட்டன. ஒவ்வொரு ஹதீஸையும் புத்தகத்துடன் அல்லது ஆசிரியருடன் சரிபார்க்கவும்."
   }
 };
 
@@ -382,13 +506,252 @@ if(typeof document!=="undefined"){
     $("langEn").setAttribute("aria-pressed",String(lang==="en"));$("langTa").setAttribute("aria-pressed",String(lang==="ta"));
     store.set("al.lang",lang);
     rebuild();paintStatus();
+    if(window.HadithTab)window.HadithTab.setLang(lang);
   }
+  window.AyahTab={pause:()=>audio.pause()};
+
+  function showTab(t){
+    const h=t==="hadith";
+    $("paneQ").hidden=h;$("paneH").hidden=!h;
+    $("tabQ").setAttribute("aria-selected",String(!h));$("tabH").setAttribute("aria-selected",String(h));
+    if(h)audio.pause();else if(window.HadithTab)window.HadithTab.stop();
+    store.set("al.tab",t);
+  }
+  $("tabQ").addEventListener("click",()=>showTab("quran"));
+  $("tabH").addEventListener("click",()=>showTab("hadith"));
+  showTab(store.get("al.tab")==="hadith"?"hadith":"quran");
   $("langEn").addEventListener("click",()=>{lang="en";applyLang();});
   $("langTa").addEventListener("click",()=>{lang="ta";applyLang();});
 
   applyLang();
 }
 if(typeof module!=="undefined")module.exports={parse,fromGlobal,urlFor,TOTAL};
+</script>
+<script>
+/* Hadith tab: plays the hadith below with the device's own Arabic text-to-speech voice. */
+const HADITH=[
+{"id": "A1a", "topic": "aqeedah", "ch": 1, "chTitle": "கொள்கையின் முக்கியத்துவம்", "ref": "Bukhari 1356", "refInBook": false, "ar": "الْحَمْدُ لِلَّهِ الَّذِي أَنْقَذَهُ مِنَ النَّارِ"},
+{"id": "A1b", "topic": "aqeedah", "ch": 1, "chTitle": "கொள்கையின் முக்கியத்துவம்", "ref": "Bukhari 2808", "refInBook": false, "ar": "عَمِلَ قَلِيلًا وَأُجِرَ كَثِيرًا"},
+{"id": "A2a", "topic": "aqeedah", "ch": 2, "chTitle": "உண்மை கொள்கையை எங்கிருந்து பெறுவது?", "ref": "Tirmidhi 2641", "ar": "مَا أَنَا عَلَيْهِ الْيَوْمَ وَأَصْحَابِي"},
+{"id": "A2b", "topic": "aqeedah", "ch": 2, "chTitle": "உண்மை கொள்கையை எங்கிருந்து பெறுவது?", "ref": "Bukhari 2652", "ar": "خَيْرُ النَّاسِ قَرْنِي، ثُمَّ الَّذِينَ يَلُونَهُمْ، ثُمَّ الَّذِينَ يَلُونَهُمْ"},
+{"id": "A3", "topic": "aqeedah", "ch": 3, "chTitle": "தவ்ஹீதுர் ருபூபிய்யஹ்", "ref": "Abu Dawud 4691", "ar": "الْقَدَرِيَّةُ مَجُوسُ هَذِهِ الْأُمَّةِ"},
+{"id": "A4", "topic": "aqeedah", "ch": 4, "chTitle": "தவ்ஹீதுல் உலூஹிய்யஹ்", "ref": "Ibn Majah 1853", "ar": "لَوْ كُنْتُ آمِرًا أَحَدًا أَنْ يَسْجُدَ لِغَيْرِ اللَّهِ، لَأَمَرْتُ الْمَرْأَةَ أَنْ تَسْجُدَ لِزَوْجِهَا"},
+{"id": "A5a", "topic": "aqeedah", "ch": 5, "chTitle": "தவ்ஹீதுல் அஸ்மாஇ வஸ் ஸிஃபாத்", "ref": "Muslim", "ar": "وَكِلْتَا يَدَيْهِ يَمِينٌ"},
+{"id": "A5b", "topic": "aqeedah", "ch": 5, "chTitle": "தவ்ஹீதுல் அஸ்மாஇ வஸ் ஸிஃபாத்", "ref": "Muslim 5198", "ar": "إِنَّ لِلَّهِ تِسْعَةً وَتِسْعِينَ اسْمًا، مِائَةً إِلَّا وَاحِدًا، مَنْ أَحْصَاهَا دَخَلَ الْجَنَّةَ"},
+{"id": "A6", "topic": "aqeedah", "ch": 6, "chTitle": "ஷிர்க்கின் பயங்கரம்", "ref": "Bukhari 2766", "ar": "عَنِ النَّبِيِّ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ قَالَ: «اجْتَنِبُوا السَّبْعَ الْمُوبِقَاتِ». قَالُوا: يَا رَسُولَ اللَّهِ، وَمَا هُنَّ؟ قَالَ: «الشِّرْكُ بِاللَّهِ، وَالسِّحْرُ، وَقَتْلُ النَّفْسِ الَّتِي حَرَّمَ اللَّهُ إِلَّا بِالْحَقِّ، وَأَكْلُ الرِّبَا، وَأَكْلُ مَالِ الْيَتِيمِ، وَالتَّوَلِّي يَوْمَ الزَّحْفِ، وَقَذْفُ الْمُحْصَنَاتِ الْمُؤْمِنَاتِ الْغَافِلَاتِ»"},
+{"id": "A7a", "topic": "aqeedah", "ch": 7, "chTitle": "ஷிர்க்கின் சில வகைகள்", "ref": "Bukhari 5757", "ar": "عَنْ أَبِي هُرَيْرَةَ رَضِيَ اللَّهُ عَنْهُ، عَنِ النَّبِيِّ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ قَالَ: لَا عَدْوَى، وَلَا طِيَرَةَ، وَلَا هَامَةَ، وَلَا صَفَرَ"},
+{"id": "A7b", "topic": "aqeedah", "ch": 7, "chTitle": "ஷிர்க்கின் சில வகைகள்", "ref": "Ahmad 17422", "ar": "مَنْ عَلَّقَ تَمِيمَةً فَقَدْ أَشْرَكَ"},
+{"id": "A7c", "topic": "aqeedah", "ch": 7, "chTitle": "ஷிர்க்கின் சில வகைகள்", "ref": "Bukhari 3445", "ar": "لَا تُطْرُونِي كَمَا أَطْرَتِ النَّصَارَى عِيسَى ابْنَ مَرْيَمَ"},
+{"id": "F1a", "topic": "fiqh", "ch": 1, "chTitle": "ஃபிக்ஹின் வரையறை", "ref": "Bukhari 71", "ar": "مَنْ يُرِدِ اللَّهُ بِهِ خَيْرًا يُفَقِّهْهُ فِي الدِّينِ"},
+{"id": "F1b", "topic": "fiqh", "ch": 1, "chTitle": "ஃபிக்ஹின் வரையறை", "ref": "Ibn Majah 395", "ar": "إِنَّ اللَّهَ قَدْ أَجَارَ أُمَّتِي أَنْ تَجْتَمِعَ عَلَى ضَلَالَةٍ"},
+{"id": "F2", "topic": "fiqh", "ch": 2, "chTitle": "தண்ணீரின் சட்டங்கள்", "ref": "Tirmidhi 66", "ar": "الْمَاءُ طَهُورٌ لَا يُنَجِّسُهُ شَيْءٌ"},
+{"id": "F3a", "topic": "fiqh", "ch": 3, "chTitle": "அசுத்தங்கள்", "ref": "Nasa'i 332", "ar": "هُوَ الطَّهُورُ مَاؤُهُ، الْحِلُّ مَيْتَتُهُ"},
+{"id": "F3b", "topic": "fiqh", "ch": 3, "chTitle": "அசுத்தங்கள்", "ref": "Ibn Majah 3314", "ar": "أُحِلَّتْ لَكُمْ مَيْتَتَانِ وَدَمَانِ، فَأَمَّا الْمَيْتَتَانِ: فَالْجَرَادُ وَالْحُوتُ، وَأَمَّا الدَّمَانِ: فَالْكَبِدُ وَالطِّحَالُ"},
+{"id": "F4", "topic": "fiqh", "ch": 4, "chTitle": "அசுத்தங்களை நீக்குவது", "ref": "Bukhari 216", "ar": "فَقَالَ النَّبِيُّ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ: «يُعَذَّبَانِ، وَمَا يُعَذَّبَانِ فِي كَبِيرٍ»، ثُمَّ قَالَ: «بَلَى، كَانَ أَحَدُهُمَا لَا يَسْتَتِرُ مِنْ بَوْلِهِ، وَكَانَ الْآخَرُ يَمْشِي بِالنَّمِيمَةِ»"},
+{"id": "F5a", "topic": "fiqh", "ch": 5, "chTitle": "உளூவின் அவசியம் மற்றும் சிறப்புகள்", "ref": "Bukhari 135", "ar": "قَالَ رَسُولُ اللَّهِ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ: «لَا تُقْبَلُ صَلَاةُ مَنْ أَحْدَثَ حَتَّى يَتَوَضَّأَ»"},
+{"id": "F5b", "topic": "fiqh", "ch": 5, "chTitle": "உளூவின் அவசியம் மற்றும் சிறப்புகள்", "ref": "Bukhari 136", "ar": "إِنَّ أُمَّتِي يُدْعَوْنَ يَوْمَ الْقِيَامَةِ غُرًّا مُحَجَّلِينَ مِنْ آثَارِ الْوُضُوءِ"},
+{"id": "Q1a", "topic": "quran", "ch": 1, "chTitle": "குர்ஆன் ஓதுவதின் அவசியமும் சிறப்புகளும்", "ref": "Tirmidhi 2910", "ar": "عَنْ عَبْدِ اللَّهِ بْنِ مَسْعُودٍ قَالَ: قَالَ رَسُولُ اللَّهِ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ: «مَنْ قَرَأَ حَرْفًا مِنْ كِتَابِ اللَّهِ فَلَهُ بِهِ حَسَنَةٌ، وَالْحَسَنَةُ بِعَشْرِ أَمْثَالِهَا، لَا أَقُولُ الم حَرْفٌ، وَلَكِنْ أَلِفٌ حَرْفٌ، وَلَامٌ حَرْفٌ، وَمِيمٌ حَرْفٌ»", "say": [["الم", "أَلِفْ لَامْ مِيمْ"]]},
+{"id": "Q1b", "topic": "quran", "ch": 1, "chTitle": "குர்ஆன் ஓதுவதின் அவசியமும் சிறப்புகளும்", "ref": "Muslim", "ar": "عَنْ أَبِي أُمَامَةَ الْبَاهِلِيِّ قَالَ: سَمِعْتُ رَسُولَ اللَّهِ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ يَقُولُ: «اقْرَءُوا الْقُرْآنَ فَإِنَّهُ يَأْتِي يَوْمَ الْقِيَامَةِ شَفِيعًا لِأَصْحَابِهِ»"},
+{"id": "Q3a", "topic": "quran", "ch": 3, "chTitle": "குர்ஆன் மனனம் செய்வதின் சிறப்புகள்", "ref": "Mustadrak al-Hakim 2086", "ar": "مَنْ قَرَأَ الْقُرْآنَ وَتَعَلَّمَهُ وَعَمِلَ بِهِ، أُلْبِسَ وَالِدَاهُ يَوْمَ الْقِيَامَةِ تَاجًا مِنْ نُورٍ، ضَوْؤُهُ مِثْلُ ضَوْءِ الشَّمْسِ، وَيُكْسَى وَالِدَاهُ حُلَّتَيْنِ لَا يَقُومُ لَهُمَا الدُّنْيَا، فَيَقُولَانِ: بِمَ كُسِينَا هَذَا؟ فَيُقَالُ: بِأَخْذِ وَلَدِكُمَا الْقُرْآنَ"},
+{"id": "Q3b", "topic": "quran", "ch": 3, "chTitle": "குர்ஆன் மனனம் செய்வதின் சிறப்புகள்", "ref": "Muslim", "ar": "إِنَّ اللَّهَ يَرْفَعُ بِهَذَا الْكِتَابِ أَقْوَامًا، وَيَضَعُ بِهِ آخَرِينَ"},
+{"id": "S1a", "topic": "seerah", "ch": 1, "chTitle": "ஸீரா ஏன் படிக்க வேண்டும்?", "ref": "Bukhari 6171", "ar": "أَنْتَ مَعَ مَنْ أَحْبَبْتَ"},
+{"id": "S1b", "topic": "seerah", "ch": 1, "chTitle": "ஸீரா ஏன் படிக்க வேண்டும்?", "ref": "Bukhari 115", "ar": "لَا يُؤْمِنُ أَحَدُكُمْ حَتَّى أَكُونَ أَحَبَّ إِلَيْهِ مِنْ وَالِدِهِ وَوَلَدِهِ"},
+{"id": "S2", "topic": "seerah", "ch": 2, "chTitle": "ருபூபிய்யதில் மக்கத்து காஃபிர்களின் கொள்கை", "ref": "Bukhari 2444", "ar": "انْصُرْ أَخَاكَ ظَالِمًا أَوْ مَظْلُومًا"},
+{"id": "S3", "topic": "seerah", "ch": 3, "chTitle": "இப்றாஹீம் (அலை) அவர்களின் சந்ததியில் தூதுத்துவம்", "ref": "Muslim / Tirmidhi 3606", "ar": "إِنَّ اللَّهَ اصْطَفَى كِنَانَةَ مِنْ وَلَدِ إِسْمَاعِيلَ، وَاصْطَفَى قُرَيْشًا مِنْ كِنَانَةَ، وَاصْطَفَى مِنْ قُرَيْشٍ بَنِي هَاشِمٍ، وَاصْطَفَانِي مِنْ بَنِي هَاشِمٍ"},
+{"id": "S4", "topic": "seerah", "ch": 4, "chTitle": "நன்மையான காரியங்களில் ஒருவருக்கொருவர் உதவி செய்வது", "ref": "Ahmad 2909", "ar": "مَا أُحِبُّ أَنَّ لِي بِهِ حُمْرَ النَّعَمِ، وَلَوْ دُعِيتُ فِي الْإِسْلَامِ لَأَجَبْتُ"},
+{"id": "S5", "topic": "seerah", "ch": 5, "chTitle": "நபியின் மனைவிமார்கள் இறை விசுவாசிகளின் தாய்மார்கள்", "ref": "Bukhari 2262", "ar": "عَنْ أَبِي هُرَيْرَةَ رَضِيَ اللَّهُ عَنْهُ، عَنِ النَّبِيِّ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ قَالَ: «مَا بَعَثَ اللَّهُ نَبِيًّا إِلَّا رَعَى الْغَنَمَ»، فَقَالَ أَصْحَابُهُ: وَأَنْتَ؟ فَقَالَ: «نَعَمْ، كُنْتُ أَرْعَاهَا عَلَى قَرَارِيطَ لِأَهْلِ مَكَّةَ»"},
+{"id": "S6", "topic": "seerah", "ch": 6, "chTitle": "நபித்துவத்திற்கு முன் நபிகள் நாயகம் ﷺ அவர்களின் பண்புகள்", "ref": "Bukhari 3", "refInBook": false, "ar": "كَلَّا وَاللَّهِ مَا يُخْزِيكَ اللَّهُ أَبَدًا، إِنَّكَ لَتَصِلُ الرَّحِمَ، وَتَحْمِلُ الْكَلَّ، وَتَكْسِبُ الْمَعْدُومَ، وَتَقْرِي الضَّيْفَ، وَتُعِينُ عَلَى نَوَائِبِ الْحَقِّ"}
+];
+if(typeof document!=="undefined")(function(){
+  const $=id=>document.getElementById(id);
+  const synth=window.speechSynthesis;
+  const store={get(k,d){try{const v=localStorage.getItem(k);return v===null?d:v}catch(e){return d}},set(k,v){try{localStorage.setItem(k,String(v))}catch(e){}}};
+  const PUNCT="،,.:؛؟!«»\"";
+  const SEG_RE=new RegExp("[^"+PUNCT+"]+["+PUNCT+"\\s]*|["+PUNCT+"\\s]+","g");
+  const PUNCT_RE=new RegExp("["+PUNCT+"]","g");
+  const TASHKEEL=/[ً-ْٰـ]/g;
+  const TOPICS=["all","aqeedah","fiqh","quran","seerah"];
+  const GAPS=[0,1,2,4,8];
+  const PLAY='<path d="M7 4v16l13-8z"/>',PAUSE='<path d="M6 4h4v16H6zM14 4h4v16h-4z"/>';
+
+  let lang=store.get("al.lang","en")==="ta"?"ta":"en";
+  const T=()=>I18N[lang];
+  const S={voice:store.get("hl.voice",""),rate:+store.get("hl.rate","0.8")||0.8,gap:+store.get("hl.gap","1"),
+    chunk:store.get("hl.chunk","1")==="1",strip:store.get("hl.strip","0")==="1",topic:store.get("hl.topic","all")};
+  if(!TOPICS.includes(S.topic))S.topic="all";
+  let list=[],idx=0,rep=1,playing=false,gen=0,timer=null,keep=null,wake=null,voices=[],statusKey=null;
+  const curId=store.get("hl.cur","");
+
+  const reps=()=>{let n=parseInt($("hRepeats").value,10);if(!(n>=1))n=1;if(n>50)n=50;return n;};
+  $("hRepeats").value=store.get("hl.reps","3");
+  $("hRate").value=S.rate;$("hChunk").checked=S.chunk;$("hStrip").checked=S.strip;
+
+  const segments=t=>t.match(SEG_RE)||[t];
+  function speechText(h,seg){
+    let t=seg.replace(PUNCT_RE," ").replace(/\s+/g," ").trim();
+    if(h.say)for(const [a,b] of h.say)t=t.replace(new RegExp("(^|\\s)"+a+"(?=\\s|$)","g"),"$1"+b);
+    if(S.strip)t=t.replace(TASHKEEL,"");
+    return t;
+  }
+
+  // ---- voices ----
+  function loadVoices(){
+    if(!synth){statusKey="noSpeech";paintStatus();return;}
+    const all=synth.getVoices(),ar=all.filter(v=>/^ar/i.test(v.lang));
+    voices=ar.length?ar:all;
+    const sel=$("hVoice");sel.textContent="";
+    for(const v of voices){const o=document.createElement("option");o.value=v.voiceURI;
+      o.textContent=`${v.name} · ${v.lang} · ${v.localService?T().onDevice:T().online}`;sel.appendChild(o);}
+    if(voices.some(v=>v.voiceURI===S.voice))sel.value=S.voice;else if(voices[0])S.voice=voices[0].voiceURI;
+    if(statusKey==="noVoice"||statusKey===null)statusKey=(all.length&&!ar.length)?"noVoice":null;
+    paintStatus();
+  }
+  function paintStatus(){const s=$("hStatus");s.textContent=statusKey?T()[statusKey]:"";s.className="status"+(statusKey?" bad":"");}
+
+  // ---- rendering ----
+  function topicLabel(h){return `${T().topics[h.topic]} ${h.ch}`;}
+  function paintTopics(){
+    const c=$("hTopics");c.textContent="";c.setAttribute("aria-label",T().topics.all);
+    for(const k of TOPICS){
+      const n=k==="all"?HADITH.length:HADITH.filter(h=>h.topic===k).length;
+      const b=document.createElement("button");b.type="button";b.setAttribute("aria-pressed",String(S.topic===k));
+      b.textContent=T().topics[k];const sm=document.createElement("small");sm.textContent=n;b.appendChild(sm);
+      b.addEventListener("click",()=>{S.topic=k;store.set("hl.topic",k);stop();buildList();});
+      c.appendChild(b);
+    }
+  }
+  function buildList(keepId){
+    paintTopics();
+    list=HADITH.filter(h=>S.topic==="all"||h.topic===S.topic);
+    const j=keepId?list.findIndex(h=>h.id===keepId):-1;idx=j>=0?j:0;
+    const ol=$("hList");ol.textContent="";
+    list.forEach((h,i)=>{
+      const li=document.createElement("li");li.dataset.i=i;li.tabIndex=0;
+      const n=document.createElement("span");n.className="idx";n.textContent=i+1;
+      const d=document.createElement("div");
+      const r=document.createElement("div");r.className="ref";r.textContent=h.ref+(h.refInBook===false?" *":"");
+      const tp=document.createElement("span");tp.textContent=topicLabel(h);r.appendChild(tp);
+      const s=document.createElement("div");s.className="snip";s.lang="ar";s.textContent=h.ar;
+      d.append(r,s);li.append(n,d);ol.appendChild(li);
+    });
+    $("hCount").textContent=T().hCount(list.length);
+    paintCurrent();
+  }
+  function paintCurrent(seg){
+    const h=list[idx],t=T();
+    const box=$("hText");box.textContent="";
+    if(h){segments(h.ar).forEach((s,i)=>{const sp=document.createElement("span");sp.className="seg";sp.dataset.i=i;sp.textContent=s;box.appendChild(sp);});}
+    $("hRef").textContent=h?h.ref+(h.refInBook===false?` (${t.notInBook})`:""):"–";
+    $("hTopic").textContent=h?topicLabel(h):"";$("hTopic").hidden=!h;
+    $("hPos").textContent=h?t.hPos(idx+1,list.length):t.hCount(0);
+    $("hRep").textContent=t.rep(Math.min(rep,reps()),reps());$("hRep").hidden=!h;
+    markSeg(seg);paintButtons();
+    document.querySelectorAll("#hList li[data-i]").forEach(li=>li.classList.toggle("cur",+li.dataset.i===idx));
+    if(h)store.set("hl.cur",h.id);
+  }
+  function markSeg(seg){
+    document.querySelectorAll("#hText .seg.now").forEach(s=>s.classList.remove("now"));
+    if(seg==="all")document.querySelectorAll("#hText .seg").forEach(s=>s.classList.add("now"));
+    else if(seg!=null){const s=document.querySelector(`#hText .seg[data-i="${seg}"]`);if(s)s.classList.add("now");}
+  }
+  function paintButtons(){
+    const t=T();
+    $("hPlayIcon").innerHTML=playing?PAUSE:PLAY;
+    $("hPlay").setAttribute("aria-label",playing?t.pause:t.play);
+    $("hPrev").setAttribute("aria-label",t.hPrev);$("hNext").setAttribute("aria-label",t.hNext);
+    $("hPlay").disabled=$("hPrev").disabled=$("hNext").disabled=!list.length||!synth;
+  }
+  function paintSettings(){
+    const t=T();
+    $("hRateVal").textContent=(+S.rate).toFixed(2)+"×";
+    const g=$("hGap");g.textContent="";
+    for(const s of GAPS){const o=document.createElement("option");o.value=s;o.textContent=s?t.sec(s):t.gapNone;g.appendChild(o);}
+    g.value=String(GAPS.includes(S.gap)?S.gap:1);
+    $("hRepDown").setAttribute("aria-label",t.fewer);$("hRepUp").setAttribute("aria-label",t.more);$("hRepeats").setAttribute("aria-label",t.hTimes);
+  }
+
+  // ---- playback ----
+  async function lockScreen(on){
+    try{
+      if(on&&"wakeLock" in navigator&&!wake){wake=await navigator.wakeLock.request("screen");wake.addEventListener("release",()=>{wake=null;});}
+      if(!on&&wake){await wake.release();wake=null;}
+    }catch(e){}
+  }
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&playing)lockScreen(true);});
+
+  function speakParts(parts,g,done){
+    let i=0;
+    const step=()=>{
+      if(g!==gen)return;
+      if(i>=parts.length){done();return;}
+      const {text,seg}=parts[i++];
+      if(!text){step();return;}
+      const u=new SpeechSynthesisUtterance(text);
+      const v=voices.find(v=>v.voiceURI===S.voice);if(v){u.voice=v;u.lang=v.lang;}else u.lang="ar-SA";
+      u.rate=S.rate;
+      let finished=false;
+      const fin=()=>{if(finished)return;finished=true;clearTimeout(safety);if(g===gen)step();};
+      // Some iOS builds never fire onend; move on after a generous estimate.
+      const safety=setTimeout(fin,(text.length*0.25/S.rate+6)*1000);
+      u.onstart=()=>{if(g===gen)markSeg(seg);};
+      u.onend=fin;u.onerror=e=>{if(e.error==="interrupted"||e.error==="canceled")return;fin();};
+      keep=u; // keep a reference so Chrome doesn't drop the utterance mid-speech
+      synth.speak(u);
+    };
+    step();
+  }
+  function playCurrent(){
+    const h=list[idx];if(!h||!playing)return;
+    const g=++gen;paintCurrent();
+    const parts=S.chunk?segments(h.ar).map((s,i)=>({text:speechText(h,s),seg:i})):[{text:speechText(h,h.ar),seg:"all"}];
+    speakParts(parts,g,()=>{
+      markSeg(null);
+      timer=setTimeout(()=>{
+        if(g!==gen)return;
+        if(rep<reps()){rep++;playCurrent();}
+        else go(idx+1);
+      },S.gap*1000);
+    });
+  }
+  function go(i){
+    if(!list.length)return;
+    gen++;clearTimeout(timer);if(synth)synth.cancel();
+    idx=((i%list.length)+list.length)%list.length;rep=1;paintCurrent();
+    const li=document.querySelector(`#hList li[data-i="${idx}"]`);if(li)li.scrollIntoView({block:"nearest"});
+    if(playing)setTimeout(playCurrent,60);
+  }
+  function start(){
+    if(!synth||!list.length)return;
+    if(window.AyahTab)window.AyahTab.pause();
+    playing=true;lockScreen(true);playCurrent();
+  }
+  function stop(){playing=false;gen++;clearTimeout(timer);if(synth)synth.cancel();lockScreen(false);markSeg(null);paintButtons();}
+
+  $("hPlay").addEventListener("click",()=>{playing?stop():start();});
+  $("hNext").addEventListener("click",()=>go(idx+1));
+  $("hPrev").addEventListener("click",()=>go(idx-1));
+  const pick=li=>{if(!li)return;playing=true;if(window.AyahTab)window.AyahTab.pause();lockScreen(true);go(+li.dataset.i);};
+  $("hList").addEventListener("click",e=>pick(e.target.closest("li[data-i]")));
+  $("hList").addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){const li=e.target.closest("li[data-i]");if(li){e.preventDefault();pick(li);}}});
+
+  $("hVoice").addEventListener("change",e=>{S.voice=e.target.value;store.set("hl.voice",S.voice);});
+  $("hRate").addEventListener("input",e=>{S.rate=+e.target.value;store.set("hl.rate",S.rate);paintSettings();});
+  $("hGap").addEventListener("change",e=>{S.gap=+e.target.value;store.set("hl.gap",S.gap);});
+  $("hChunk").addEventListener("change",e=>{S.chunk=e.target.checked;store.set("hl.chunk",S.chunk?"1":"0");});
+  $("hStrip").addEventListener("change",e=>{S.strip=e.target.checked;store.set("hl.strip",S.strip?"1":"0");});
+  const setReps=n=>{$("hRepeats").value=n;store.set("hl.reps",reps());paintCurrent();};
+  $("hRepeats").addEventListener("input",()=>{store.set("hl.reps",reps());paintCurrent();});
+  $("hRepDown").addEventListener("click",()=>setReps(Math.max(1,reps()-1)));
+  $("hRepUp").addEventListener("click",()=>setReps(Math.min(50,reps()+1)));
+
+  window.HadithTab={
+    stop,
+    setLang(l){lang=l;const id=list[idx]&&list[idx].id;paintSettings();loadVoices();buildList(id);paintStatus();}
+  };
+  paintSettings();buildList(curId);
+  if(synth){loadVoices();synth.addEventListener?synth.addEventListener("voiceschanged",loadVoices):(synth.onvoiceschanged=loadVoices);setTimeout(loadVoices,800);}
+  else{statusKey="noSpeech";paintStatus();paintButtons();}
+})();
 </script>
 </body>
 </html>
