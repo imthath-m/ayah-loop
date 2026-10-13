@@ -153,6 +153,10 @@ ol.list li.cur .idx{color:var(--accent);font-weight:600}
   </section>
 
   <section>
+    <div class="seg-ctl" id="qTopics" role="group"></div>
+  </section>
+
+  <section>
     <div class="summary"><strong id="count"></strong><span data-i18n="tapHint"></span></div>
     <div class="errors" id="errors"></div>
     <ol class="list" id="list"></ol>
@@ -160,7 +164,7 @@ ol.list li.cur .idx{color:var(--accent);font-weight:600}
 
   <section>
     <label for="verses" data-i18n="verses"></label>
-    <textarea id="verses" spellcheck="false" autocapitalize="off" autocomplete="off">7:40, 18:103, 18:104, 14:35, 2:137, 4:115, 9:100, 7:54, 36:82, 22:73, 5:36, 4:116, 16:36, 42:11, 38:75, 31:13, 5:72, 10:62, 10:63, 20:25, 20:26, 20:27, 20:28, 9:122, 9:28, 8:11, 6:145, 9:108, 15:9, 2:185, 38:29, 47:24, 54:17, 41:42, 4:136, 36:70, 15:9, 16:44, 7:180, 20:8, 12:111, 33:21, 29:61, 10:18, 29:27, 5:2, 33:6, 33:45, 33:46, 3:164, 42:51</textarea>
+    <textarea id="verses" spellcheck="false" autocapitalize="off" autocomplete="off">7:40, 18:103, 18:104, 14:35, 2:137, 4:115, 9:100, 7:54, 36:82, 22:73, 4:36, 4:116, 16:36, 42:11, 38:75, 31:13, 5:72, 10:62, 10:63, 20:25, 20:26, 20:27, 20:28, 9:122, 9:28, 8:11, 6:145, 9:108, 15:9, 2:185, 38:29, 47:24, 54:17, 41:42, 4:136, 36:70, 15:9, 16:44, 7:180, 20:8, 12:111, 33:21, 29:61, 10:18, 29:27, 5:2, 33:6, 33:45, 33:46, 3:164, 42:51</textarea>
     <p class="hint" data-i18n-html="hint"></p>
   </section>
 
@@ -272,6 +276,7 @@ const I18N={
     blocked:"Tap Play to start the audio.",
     offline:"No connection. Playback will continue when the network returns.",
     tabQuran:"Quran", tabHadith:"Hadith",
+    topicEmpty:"None of your verses belong to this subject. Tap All to see them.",
     hTagline:"Hadith from the first chapters of the HGWC 1st-year muthoon, read aloud by your phone's Arabic voice.",
     topics:{all:"All",aqeedah:"Aqeedah",fiqh:"Fiqh",quran:"Quran",seerah:"Seerah"},
     hPos:(i,n)=>`Hadith ${i} of ${n}`, hCount:n=>`${n} hadith`, hTap:"Tap a hadith to start from it",
@@ -306,6 +311,7 @@ const I18N={
     blocked:"ஒலியைத் தொடங்க ஒலிக்கச் செய் என்பதைத் தட்டுங்கள்.",
     offline:"இணைப்பு இல்லை. நெட்வொர்க் திரும்பியதும் ஒலி தொடரும்.",
     tabQuran:"குர்ஆன்", tabHadith:"ஹதீஸ்",
+    topicEmpty:"உங்கள் வசனங்களில் எதுவும் இந்தப் பாடத்தில் இல்லை. அவற்றைப் பார்க்க அனைத்தும் என்பதைத் தட்டுங்கள்.",
     hTagline:"HGWC முதல் வருட முத்தூன் புத்தகத்தின் முதல் பாடங்களிலுள்ள ஹதீஸ்கள், உங்கள் போனின் அரபு குரலில்.",
     topics:{all:"அனைத்தும்",aqeedah:"அகீதா",fiqh:"ஃபிக்ஹ்",quran:"குர்ஆன்",seerah:"ஸீரா"},
     hPos:(i,n)=>`ஹதீஸ் ${i} / ${n}`, hCount:n=>`${n} ஹதீஸ்கள்`, hTap:"எந்த ஹதீஸிலிருந்தும் தொடங்க அதைத் தட்டுங்கள்",
@@ -338,6 +344,15 @@ const RECITERS=[
   ["Ghamadi_40kbps","Saad Al-Ghamdi · 40 kbps"],
   ["Yasser_Ad-Dussary_128kbps","Yasser Ad-Dussary"]
 ];
+// Verses per subject from the first chapters of the HGWC 1st-year muthoon
+// (Aqeedah 1–7, Fiqh 1–5, Quran 1–6, Seerah 1–6). The book prints 4:36 as 5:36.
+const Q_TOPICS={
+  aqeedah:"7:40, 18:103, 18:104, 14:35, 2:137, 4:115, 9:100, 7:54, 36:82, 22:73, 4:36, 4:116, 16:36, 42:11, 38:75, 31:13, 5:72, 10:62, 10:63",
+  fiqh:"20:25, 20:26, 20:27, 20:28, 9:122, 9:28, 8:11, 6:145, 9:108",
+  quran:"15:9, 2:185, 38:29, 47:24, 54:17, 41:42, 4:136, 36:70, 15:9, 16:44, 7:180, 20:8",
+  seerah:"12:111, 33:21, 29:61, 10:18, 29:27, 5:2, 33:6, 33:45, 33:46, 3:164, 42:51"
+};
+const OLD_DEFAULT="7:40, 18:103, 18:104, 14:35, 2:137, 4:115, 9:100, 7:54, 36:82, 22:73, 5:36, 4:116, 16:36, 42:11, 38:75, 31:13, 5:72, 10:62, 10:63, 20:25, 20:26, 20:27, 20:28, 9:122, 9:28, 8:11, 6:145, 9:108, 15:9, 2:185, 38:29, 47:24, 54:17, 41:42, 4:136, 36:70, 15:9, 16:44, 7:180, 20:8, 12:111, 33:21, 29:61, 10:18, 29:27, 5:2, 33:6, 33:45, 33:46, 3:164, 42:51";
 const TOTAL=COUNTS.reduce((a,b)=>a+b,0);
 const START=[];{let s=0;for(const c of COUNTS){START.push(s);s+=c;}}
 const MAX_AYAHS=600;
@@ -380,7 +395,10 @@ if(typeof document!=="undefined"){
 
   const sel=$("reciter");
   for(const [v,l] of RECITERS){const o=document.createElement("option");o.value=v;o.textContent=l;sel.appendChild(o);}
-  const sv=store.get("al.verses");if(sv!==null)$("verses").value=sv;
+  const sv=store.get("al.verses");if(sv!==null&&sv.trim()!==OLD_DEFAULT)$("verses").value=sv;
+  const TOPIC_SETS={};for(const k in Q_TOPICS)TOPIC_SETS[k]=new Set(parse(Q_TOPICS[k]).ayahs);
+  const Q_KEYS=["all",...Object.keys(Q_TOPICS)];
+  let qTopic=store.get("al.topic");if(!Q_KEYS.includes(qTopic))qTopic="all";
   const sr=store.get("al.reciter");if(sr&&RECITERS.some(r=>r[0]===sr))sel.value=sr;
   const sp=store.get("al.reps");if(sp)$("repeats").value=sp;
 
@@ -462,19 +480,31 @@ if(typeof document!=="undefined"){
   $("next").addEventListener("click",next);
   $("prev").addEventListener("click",prev);
 
-  function rebuild(){
+  function paintTopics(all){
+    const c=$("qTopics"),t=T();c.textContent="";c.setAttribute("aria-label",t.topics.all);
+    for(const k of Q_KEYS){
+      const n=k==="all"?all.length:all.filter(g=>TOPIC_SETS[k].has(g)).length;
+      const b=document.createElement("button");b.type="button";b.setAttribute("aria-pressed",String(qTopic===k));
+      b.textContent=t.topics[k];const sm=document.createElement("small");sm.textContent=n;b.appendChild(sm);
+      b.addEventListener("click",()=>{if(qTopic===k)return;qTopic=k;store.set("al.topic",k);rebuild(true);});
+      c.appendChild(b);
+    }
+  }
+  function rebuild(fresh){
     const t=T();
     const prevG=ayahs[idx];
     const r=parse($("verses").value);
-    ayahs=r.ayahs;
-    if(prevG!==undefined){const j=ayahs.indexOf(prevG);if(j>=0)idx=j;}
+    paintTopics(r.ayahs);
+    ayahs=qTopic==="all"?r.ayahs:r.ayahs.filter(g=>TOPIC_SETS[qTopic].has(g));
+    if(fresh===true)idx=0;
+    else if(prevG!==undefined){const j=ayahs.indexOf(prevG);if(j>=0)idx=j;}
     if(idx>=ayahs.length)idx=0;
     $("count").textContent=t.count(ayahs.length);
     const ec=$("errors");ec.textContent="";
     for(const e of r.errors){const s=document.createElement("span");s.className="err";s.textContent=t.notFound(e);ec.appendChild(s);}
     if(r.capped){const s=document.createElement("span");s.className="err";s.textContent=t.capped(MAX_AYAHS);ec.appendChild(s);}
     const list=$("list");list.textContent="";
-    if(!ayahs.length){const li=document.createElement("li");li.className="empty";li.textContent=t.empty;list.appendChild(li);
+    if(!ayahs.length){const li=document.createElement("li");li.className="empty";li.textContent=(qTopic!=="all"&&r.ayahs.length)?t.topicEmpty:t.empty;list.appendChild(li);
       audio.pause();}
     ayahs.forEach((g,i)=>{const [s,a]=fromGlobal(g);
       const li=document.createElement("li");li.dataset.i=i;li.tabIndex=0;
