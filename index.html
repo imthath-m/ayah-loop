@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Ayah Loop</title>
+<meta name="description" content="Play a list of Quran verses from any surahs on repeat.">
+<meta name="theme-color" content="#0e6b53">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Ayah Loop">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Noto+Sans+Tamil:wght@400;500;600&display=swap">
+<style>
+/* Layout: one narrow column; player with large car-friendly controls first, then the verse queue, then settings */
+:root{
+  --bg:#f2f5f3; --surface:#ffffff; --ink:#15211d; --muted:#5a6a64; --line:#d5ddd9;
+  --accent:#0e6b53; --accent-ink:#ffffff; --accent-soft:#e1efe9; --warn:#a1382a; --warn-soft:#f8e6e2;
+  --sans:"IBM Plex Sans","Noto Sans Tamil",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0e1412; --surface:#16201c; --ink:#e4ece9; --muted:#91a39c; --line:#28352f;
+  --accent:#3dbd92; --accent-ink:#04120d; --accent-soft:#163128; --warn:#ff8b78; --warn-soft:#3a1c17; color-scheme:dark}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html[lang="ta"] body{font-family:"Noto Sans Tamil","IBM Plex Sans",system-ui,sans-serif;line-height:1.65}
+[hidden]{display:none!important}
+.wrap{max-width:560px;margin:0 auto;padding:14px 16px 48px;display:flex;flex-direction:column;gap:22px}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.topbar h1{font-size:22px;font-weight:600;letter-spacing:-.01em;margin:0}
+.lang{display:inline-flex;border:1px solid var(--line);border-radius:999px;background:var(--surface);padding:3px}
+.lang button{font:inherit;font-size:13px;font-weight:500;border:0;background:none;color:var(--muted);padding:5px 12px;border-radius:999px;cursor:pointer}
+.lang button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.lang button[lang="ta"]{font-family:"Noto Sans Tamil",system-ui,sans-serif}
+.tagline{margin:-14px 0 0;color:var(--muted)}
+
+.player{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 18px 16px;display:flex;flex-direction:column;gap:14px}
+.np-label{font-size:12px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+html[lang="ta"] .np-label{text-transform:none;letter-spacing:0;font-size:13px}
+.np-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.np-key{font-family:var(--mono);font-size:40px;font-weight:500;line-height:1;font-variant-numeric:tabular-nums}
+.np-name{font-size:18px;font-weight:500}
+.np-meta{display:flex;gap:8px;flex-wrap:wrap}
+.chip{font-size:13px;font-variant-numeric:tabular-nums;background:var(--accent-soft);color:var(--ink);border-radius:999px;padding:2px 10px}
+.bar{height:4px;background:var(--line);border-radius:2px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .25s linear}
+.controls{display:grid;grid-template-columns:1fr 1.4fr 1fr;gap:10px}
+.ctl{height:64px;border-radius:14px;border:1px solid var(--line);background:var(--bg);color:var(--ink);display:grid;place-items:center;cursor:pointer}
+.ctl svg{width:28px;height:28px;fill:currentColor}
+.ctl.play{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.ctl.play svg{width:34px;height:34px}
+.ctl:disabled{opacity:.45;cursor:not-allowed}
+.status{min-height:1.3em;font-size:13.5px;color:var(--muted);margin:0}
+.status.bad{color:var(--warn)}
+
+label,.lbl{display:block;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:6px}
+html[lang="ta"] label,html[lang="ta"] .lbl{text-transform:none;letter-spacing:0;font-size:13px}
+textarea,select,input{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;width:100%}
+textarea{font-family:var(--mono);font-size:16px;min-height:110px;padding:10px 12px;resize:vertical}
+select{padding:10px 12px;height:44px;font-size:16px}
+textarea:focus-visible,select:focus-visible,input:focus-visible,button:focus-visible,a:focus-visible,li:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.hint{font-size:13px;color:var(--muted);margin:6px 0 0}
+code{font-family:var(--mono);font-size:12.5px;background:var(--accent-soft);padding:1px 5px;border-radius:4px}
+.row{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:end}
+.row>div{min-width:0}
+.stepper{display:flex;align-items:center;border:1px solid var(--line);border-radius:8px;background:var(--surface);height:44px}
+.stepper button{width:40px;height:100%;border:0;background:none;color:var(--ink);font-size:20px;cursor:pointer}
+.stepper input{width:44px;border:0;text-align:center;font-family:var(--mono);font-size:16px;font-variant-numeric:tabular-nums;height:100%;border-radius:0;-moz-appearance:textfield}
+.stepper input::-webkit-inner-spin-button{-webkit-appearance:none}
+
+.summary{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.summary strong{font-weight:500;font-variant-numeric:tabular-nums}
+.summary span{color:var(--muted);font-size:13px}
+.errors{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.err{font-size:12.5px;color:var(--warn);background:var(--warn-soft);border-radius:4px;padding:2px 7px}
+ol.list{list-style:none;margin:10px 0 0;padding:0;border:1px solid var(--line);border-radius:10px;background:var(--surface);max-height:320px;overflow-y:auto}
+ol.list li{display:grid;grid-template-columns:2rem 4.5rem 1fr;gap:8px;align-items:center;padding:10px 12px;border-top:1px solid var(--line);cursor:pointer}
+ol.list li:first-child{border-top:0}
+ol.list li.cur{background:var(--accent-soft)}
+ol.list li.cur .idx{color:var(--accent);font-weight:600}
+.idx{font-family:var(--mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.key{font-family:var(--mono);font-weight:500;font-variant-numeric:tabular-nums}
+.name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.empty{padding:18px 12px;color:var(--muted);text-align:center;display:block!important;cursor:default!important}
+
+.tips{border-top:1px solid var(--line);padding-top:18px;display:flex;flex-direction:column;gap:8px}
+.tips h2{font-size:15px;font-weight:600;margin:0}
+.tips p{font-size:13.5px;color:var(--muted);margin:0}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <h1>Ayah Loop</h1>
+    <div class="lang" role="group" aria-label="Language">
+      <button type="button" id="langEn" lang="en" aria-pressed="true">English</button>
+      <button type="button" id="langTa" lang="ta" aria-pressed="false">தமிழ்</button>
+    </div>
+  </div>
+  <p class="tagline" data-i18n="tagline"></p>
+
+  <section class="player" aria-live="polite">
+    <div class="np-label" data-i18n="nowPlaying"></div>
+    <div class="np-head"><span class="np-key" id="npKey">–</span><span class="np-name" id="npName"></span></div>
+    <div class="np-meta"><span class="chip" id="npPos"></span><span class="chip" id="npRep"></span></div>
+    <div class="bar"><i id="bar"></i></div>
+    <div class="controls">
+      <button class="ctl" id="prev" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg></button>
+      <button class="ctl play" id="play" type="button"><svg viewBox="0 0 24 24" aria-hidden="true" id="playIcon"><path d="M7 4v16l13-8z"/></svg></button>
+      <button class="ctl" id="next" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 5h2v14h-2zM4 5v14l11-7z"/></svg></button>
+    </div>
+    <p class="status" id="status" role="status"></p>
+  </section>
+
+  <section>
+    <div class="summary"><strong id="count"></strong><span data-i18n="tapHint"></span></div>
+    <div class="errors" id="errors"></div>
+    <ol class="list" id="list"></ol>
+  </section>
+
+  <section>
+    <label for="verses" data-i18n="verses"></label>
+    <textarea id="verses" spellcheck="false" autocapitalize="off" autocomplete="off">7:40, 18:103, 18:104, 14:35, 2:137, 4:115, 9:100, 7:54, 36:82, 22:73, 5:36, 4:116, 16:36, 42:11, 38:75, 31:13, 5:72, 10:62, 10:63, 20:25, 20:26, 20:27, 20:28, 9:122, 9:28, 8:11, 6:145, 9:108, 15:9, 2:185, 38:29, 47:24, 54:17, 41:42, 4:136, 36:70, 15:9, 16:44, 7:180, 20:8, 12:111, 33:21, 29:61, 10:18, 29:27, 5:2, 33:6, 33:45, 33:46, 3:164, 42:51</textarea>
+    <p class="hint" data-i18n-html="hint"></p>
+  </section>
+
+  <section class="row">
+    <div>
+      <label for="reciter" data-i18n="reciter"></label>
+      <select id="reciter"></select>
+    </div>
+    <div>
+      <span class="lbl" id="repLbl" data-i18n="playEach"></span>
+      <div class="stepper" role="group" aria-labelledby="repLbl">
+        <button type="button" id="repDown">−</button>
+        <input id="repeats" type="number" inputmode="numeric" min="1" max="50" value="3">
+        <button type="button" id="repUp">+</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="tips">
+    <h2 data-i18n="tipsTitle"></h2>
+    <p data-i18n="tipHome"></p>
+    <p data-i18n="tipLoop"></p>
+    <p data-i18n="tipData"></p>
+  </section>
+</div>
+
+<script>
+const I18N={
+  en:{
+    tagline:"Pick verses from any surahs. Play them in order, on repeat.",
+    nowPlaying:"Now playing", ready:"Ready",
+    pos:(i,n)=>`Ayah ${i} of ${n}`, rep:(r,R)=>`Play ${r} of ${R}`,
+    play:"Play", pause:"Pause", prev:"Previous verse", next:"Next verse",
+    count:n=>`${n} ${n===1?"ayah":"ayahs"}`, tapHint:"Tap a verse to start from it",
+    notFound:t=>`Not found: ${t}`, capped:n=>`Kept the first ${n} ayahs`,
+    empty:"Add verses below to build the list.",
+    verses:"Verses",
+    hint:"Use <code>2:255</code> for surah:ayah, <code>18:1-5</code> for a range, or a plain number like <code>231</code> for the ayah's position in the whole Quran (1–6236). Separate with commas, spaces or new lines.",
+    reciter:"Reciter", playEach:"Play each", fewer:"Fewer repeats", more:"More repeats", times:"Times to play each ayah",
+    tipsTitle:"In the car",
+    tipHome:"Add it to your home screen for one-tap access. On iPhone, open this page in Safari, tap Share, then Add to Home Screen. On Android, open the browser menu and tap Add to Home screen.",
+    tipLoop:"After the last verse the list starts again. Lock-screen, CarPlay and Android Auto controls work for pause and skip.",
+    tipData:"Audio streams from everyayah.com, so it uses mobile data. Pick a 64 kbps reciter to save data. Your list and settings stay saved on this phone.",
+    loadErr:"Couldn't load this verse. Skipping to the next.",
+    blocked:"Tap Play to start the audio.",
+    offline:"No connection. Playback will continue when the network returns."
+  },
+  ta:{
+    tagline:"எந்த சூராவிலிருந்தும் வசனங்களைத் தேர்ந்தெடுங்கள். அவற்றை வரிசையாக, மீண்டும் மீண்டும் கேளுங்கள்.",
+    nowPlaying:"இப்போது ஒலிப்பது", ready:"தயார்",
+    pos:(i,n)=>`ஆயத் ${i} / ${n}`, rep:(r,R)=>`முறை ${r} / ${R}`,
+    play:"ஒலிக்கச் செய்", pause:"இடைநிறுத்து", prev:"முந்தைய வசனம்", next:"அடுத்த வசனம்",
+    count:n=>`${n} ஆயத்துகள்`, tapHint:"எந்த வசனத்திலிருந்தும் தொடங்க அதைத் தட்டுங்கள்",
+    notFound:t=>`கிடைக்கவில்லை: ${t}`, capped:n=>`முதல் ${n} ஆயத்துகள் மட்டும் சேர்க்கப்பட்டன`,
+    empty:"பட்டியலை உருவாக்க கீழே வசனங்களைச் சேர்க்கவும்.",
+    verses:"வசனங்கள்",
+    hint:"சூரா:ஆயத்துக்கு <code>2:255</code>, வரம்புக்கு <code>18:1-5</code>, அல்லது முழு குர்ஆனில் ஆயத்தின் வரிசை எண்ணுக்கு <code>231</code> போன்ற எண் (1–6236) பயன்படுத்துங்கள். காற்புள்ளி, இடைவெளி அல்லது புதிய வரியால் பிரிக்கவும்.",
+    reciter:"ஓதுபவர்", playEach:"ஒவ்வொரு ஆயத்தும் (முறை)", fewer:"குறைவாக", more:"அதிகமாக", times:"ஒவ்வொரு ஆயத்தும் ஒலிக்கும் முறை",
+    tipsTitle:"காரில்",
+    tipHome:"ஒரே தட்டலில் திறக்க முகப்புத் திரையில் சேர்க்கவும். iPhone-ல் இந்தப் பக்கத்தை Safari-யில் திறந்து, Share-ஐத் தட்டி, Add to Home Screen-ஐத் தேர்ந்தெடுங்கள். Android-ல் உலாவியின் மெனுவைத் திறந்து Add to Home screen-ஐத் தட்டுங்கள்.",
+    tipLoop:"கடைசி வசனத்துக்குப் பிறகு பட்டியல் மீண்டும் தொடங்கும். பூட்டுத் திரை, CarPlay, Android Auto கட்டுப்பாடுகளில் இடைநிறுத்தவும் தவிர்க்கவும் முடியும்.",
+    tipData:"ஒலி everyayah.com-இலிருந்து ஸ்ட்ரீம் ஆவதால் மொபைல் டேட்டா தேவை. டேட்டாவைச் சேமிக்க 64 kbps ஓதுபவரைத் தேர்ந்தெடுங்கள். உங்கள் பட்டியலும் அமைப்புகளும் இந்த போனில் சேமிக்கப்படும்.",
+    loadErr:"இந்த வசனத்தை ஏற்ற முடியவில்லை. அடுத்ததுக்குச் செல்கிறது.",
+    blocked:"ஒலியைத் தொடங்க ஒலிக்கச் செய் என்பதைத் தட்டுங்கள்.",
+    offline:"இணைப்பு இல்லை. நெட்வொர்க் திரும்பியதும் ஒலி தொடரும்."
+  }
+};
+
+const COUNTS=[7,286,200,176,120,165,206,75,129,109,123,111,43,52,99,128,111,110,98,135,112,78,118,64,77,227,93,88,69,60,34,30,73,54,45,83,182,88,75,85,54,53,89,59,37,35,38,29,18,45,60,49,62,55,78,96,29,22,24,13,14,11,11,18,12,12,30,52,52,44,28,28,20,56,40,31,50,40,46,42,29,19,36,25,22,17,19,26,30,20,15,21,11,8,8,19,5,8,8,11,11,8,3,9,5,4,7,3,6,3,5,4,5,6];
+const NAMES=["Al-Fatihah","Al-Baqarah","Al-Imran","An-Nisa","Al-Ma'idah","Al-An'am","Al-A'raf","Al-Anfal","At-Tawbah","Yunus","Hud","Yusuf","Ar-Ra'd","Ibrahim","Al-Hijr","An-Nahl","Al-Isra","Al-Kahf","Maryam","Taha","Al-Anbiya","Al-Hajj","Al-Mu'minun","An-Nur","Al-Furqan","Ash-Shu'ara","An-Naml","Al-Qasas","Al-Ankabut","Ar-Rum","Luqman","As-Sajdah","Al-Ahzab","Saba","Fatir","Ya-Sin","As-Saffat","Sad","Az-Zumar","Ghafir","Fussilat","Ash-Shura","Az-Zukhruf","Ad-Dukhan","Al-Jathiyah","Al-Ahqaf","Muhammad","Al-Fath","Al-Hujurat","Qaf","Adh-Dhariyat","At-Tur","An-Najm","Al-Qamar","Ar-Rahman","Al-Waqi'ah","Al-Hadid","Al-Mujadilah","Al-Hashr","Al-Mumtahanah","As-Saff","Al-Jumu'ah","Al-Munafiqun","At-Taghabun","At-Talaq","At-Tahrim","Al-Mulk","Al-Qalam","Al-Haqqah","Al-Ma'arij","Nuh","Al-Jinn","Al-Muzzammil","Al-Muddaththir","Al-Qiyamah","Al-Insan","Al-Mursalat","An-Naba","An-Nazi'at","Abasa","At-Takwir","Al-Infitar","Al-Mutaffifin","Al-Inshiqaq","Al-Buruj","At-Tariq","Al-A'la","Al-Ghashiyah","Al-Fajr","Al-Balad","Ash-Shams","Al-Layl","Ad-Duha","Ash-Sharh","At-Tin","Al-Alaq","Al-Qadr","Al-Bayyinah","Az-Zalzalah","Al-Adiyat","Al-Qari'ah","At-Takathur","Al-Asr","Al-Humazah","Al-Fil","Quraysh","Al-Ma'un","Al-Kawthar","Al-Kafirun","An-Nasr","Al-Masad","Al-Ikhlas","Al-Falaq","An-Nas"];
+const RECITERS=[
+  ["Alafasy_64kbps","Mishary Alafasy · 64 kbps"],
+  ["Alafasy_128kbps","Mishary Alafasy · 128 kbps"],
+  ["Husary_64kbps","Mahmoud Al-Husary · 64 kbps"],
+  ["Husary_Muallim_128kbps","Al-Husary, teaching pace"],
+  ["Minshawy_Murattal_128kbps","Al-Minshawi"],
+  ["Abdul_Basit_Murattal_64kbps","Abdul Basit · 64 kbps"],
+  ["Abdurrahmaan_As-Sudais_64kbps","As-Sudais · 64 kbps"],
+  ["Saood_ash-Shuraym_64kbps","Ash-Shuraym · 64 kbps"],
+  ["Maher_AlMuaiqly_64kbps","Maher Al-Muaiqly · 64 kbps"],
+  ["Ghamadi_40kbps","Saad Al-Ghamdi · 40 kbps"],
+  ["Yasser_Ad-Dussary_128kbps","Yasser Ad-Dussary"]
+];
+const TOTAL=COUNTS.reduce((a,b)=>a+b,0);
+const START=[];{let s=0;for(const c of COUNTS){START.push(s);s+=c;}}
+const MAX_AYAHS=600;
+
+function toGlobal(s,a){return START[s-1]+a;}
+function fromGlobal(g){let s=0;while(s<113&&START[s+1]<g)s++;return [s+1,g-START[s]];}
+function parseEnd(t,ctxSurah){
+  let m=t.match(/^(\d{1,3}):(\d{1,3})$/);
+  if(m){const s=+m[1],a=+m[2];if(s<1||s>114||a<1||a>COUNTS[s-1])return null;return {g:toGlobal(s,a),surah:s};}
+  m=t.match(/^\d{1,4}$/);
+  if(m){const n=+t;
+    if(ctxSurah){if(n<1||n>COUNTS[ctxSurah-1])return null;return {g:toGlobal(ctxSurah,n),surah:ctxSurah};}
+    if(n<1||n>TOTAL)return null;return {g:n,surah:null};}
+  return null;
+}
+function parse(text){
+  const norm=text.replace(/\s*[-–—]\s*/g,"-").replace(/\s*:\s*/g,":");
+  const tokens=norm.split(/[\s,;]+/).filter(Boolean);
+  const out=[],errors=[];
+  for(const tok of tokens){
+    const parts=tok.split("-");
+    if(parts.length>2){errors.push(tok);continue;}
+    const a=parseEnd(parts[0],null);
+    if(!a){errors.push(tok);continue;}
+    if(parts.length===1){out.push(a.g);continue;}
+    const b=parseEnd(parts[1],a.surah);
+    if(!b||b.g<a.g){errors.push(tok);continue;}
+    for(let g=a.g;g<=b.g;g++)out.push(g);
+  }
+  return {ayahs:out.slice(0,MAX_AYAHS),errors,capped:out.length>MAX_AYAHS};
+}
+const pad=(n,w)=>String(n).padStart(w,"0");
+const urlFor=(rec,g)=>{const [s,a]=fromGlobal(g);return `https://everyayah.com/data/${rec}/${pad(s,3)}${pad(a,3)}.mp3`;};
+
+if(typeof document!=="undefined"){
+  const $=id=>document.getElementById(id);
+  const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+  let lang=store.get("al.lang")==="ta"?"ta":"en";
+  const T=()=>I18N[lang];
+
+  const sel=$("reciter");
+  for(const [v,l] of RECITERS){const o=document.createElement("option");o.value=v;o.textContent=l;sel.appendChild(o);}
+  const sv=store.get("al.verses");if(sv!==null)$("verses").value=sv;
+  const sr=store.get("al.reciter");if(sr&&RECITERS.some(r=>r[0]===sr))sel.value=sr;
+  const sp=store.get("al.reps");if(sp)$("repeats").value=sp;
+
+  const audio=new Audio();audio.preload="auto";
+  const prefetch=new Audio();prefetch.preload="auto";prefetch.muted=true;
+  let ayahs=[],idx=Math.max(0,parseInt(store.get("al.idx")||"0",10)||0),rep=1,loadedKey="",statusKey=null,statusKind="";
+
+  const reps=()=>{let n=parseInt($("repeats").value,10);if(!(n>=1))n=1;if(n>50)n=50;return n;};
+  const playing=()=>!audio.paused&&!audio.ended;
+  function setStatus(k,kind){statusKey=k;statusKind=kind||"";paintStatus();}
+  function paintStatus(){const s=$("status");s.textContent=statusKey?T()[statusKey]:"";s.className="status"+(statusKind?" "+statusKind:"");}
+
+  function paintPlayer(){
+    const t=T(),n=ayahs.length;
+    if(!n){$("npKey").textContent="–";$("npName").textContent="";$("npPos").textContent=t.count(0);$("npRep").hidden=true;}
+    else{const [s,a]=fromGlobal(ayahs[idx]);
+      $("npKey").textContent=`${s}:${a}`;$("npName").textContent=NAMES[s-1];
+      $("npPos").textContent=t.pos(idx+1,n);$("npRep").hidden=false;$("npRep").textContent=t.rep(Math.min(rep,reps()),reps());}
+    const p=playing();
+    $("playIcon").innerHTML=p?'<path d="M6 4h4v16H6zM14 4h4v16h-4z"/>':'<path d="M7 4v16l13-8z"/>';
+    $("play").setAttribute("aria-label",p?t.pause:t.play);
+    $("prev").setAttribute("aria-label",t.prev);$("next").setAttribute("aria-label",t.next);
+    $("play").disabled=$("prev").disabled=$("next").disabled=!n;
+    document.querySelectorAll("#list li[data-i]").forEach(li=>li.classList.toggle("cur",+li.dataset.i===idx));
+    updateSession();
+  }
+
+  function updateSession(){
+    if(!("mediaSession" in navigator)||!ayahs.length)return;
+    const [s,a]=fromGlobal(ayahs[idx]);const rl=RECITERS.find(r=>r[0]===sel.value);
+    try{navigator.mediaSession.metadata=new MediaMetadata({title:`${s}:${a} ${NAMES[s-1]}`,artist:rl?rl[1]:"",album:`Ayah Loop · ${idx+1}/${ayahs.length}`,
+      artwork:[{src:"icon-512.png",sizes:"512x512",type:"image/png"}]});
+      navigator.mediaSession.playbackState=playing()?"playing":"paused";}catch(e){}
+  }
+
+  function loadCurrent(){
+    if(!ayahs.length)return;
+    const url=urlFor(sel.value,ayahs[idx]);
+    if(loadedKey!==url){audio.src=url;loadedKey=url;}
+    const nx=urlFor(sel.value,ayahs[(idx+1)%ayahs.length]);
+    if(prefetch.src!==nx){prefetch.src=nx;try{prefetch.load();}catch(e){}}
+    store.set("al.idx",String(idx));
+  }
+  function doPlay(){
+    loadCurrent();
+    const p=audio.play();
+    if(p&&p.catch)p.catch(err=>{if(err&&err.name==="NotAllowedError")setStatus("blocked","");paintPlayer();});
+  }
+  function go(i,autoplay){
+    if(!ayahs.length)return;
+    idx=((i%ayahs.length)+ayahs.length)%ayahs.length;rep=1;
+    loadCurrent();if(autoplay){audio.currentTime=0;doPlay();}paintPlayer();
+    const cur=document.querySelector(`#list li[data-i="${idx}"]`);if(cur)cur.scrollIntoView({block:"nearest"});
+  }
+  const next=()=>go(idx+1,playing()||audio.ended);
+  function prev(){if(audio.currentTime>3){audio.currentTime=0;rep=1;paintPlayer();return;}go(idx-1,playing());}
+
+  audio.addEventListener("ended",()=>{
+    if(rep<reps()){rep++;audio.currentTime=0;doPlay();paintPlayer();}
+    else go(idx+1,true);
+  });
+  audio.addEventListener("play",()=>{setStatus(null);paintPlayer();});
+  audio.addEventListener("pause",paintPlayer);
+  audio.addEventListener("timeupdate",()=>{const d=audio.duration;$("bar").style.width=d?`${Math.min(100,audio.currentTime/d*100)}%`:"0";});
+  let errTimer=null;
+  audio.addEventListener("error",()=>{
+    if(!audio.src)return;
+    if(!navigator.onLine){setStatus("offline","bad");return;}
+    setStatus("loadErr","bad");clearTimeout(errTimer);errTimer=setTimeout(()=>go(idx+1,true),1200);
+  });
+  window.addEventListener("online",()=>{if(statusKey==="offline"){setStatus(null);loadedKey="";doPlay();}});
+
+  if("mediaSession" in navigator){
+    const ms=navigator.mediaSession,h=(a,f)=>{try{ms.setActionHandler(a,f);}catch(e){}};
+    h("play",doPlay);h("pause",()=>audio.pause());h("nexttrack",()=>go(idx+1,true));h("previoustrack",()=>go(idx-1,true));
+  }
+
+  $("play").addEventListener("click",()=>{if(playing())audio.pause();else doPlay();});
+  $("next").addEventListener("click",next);
+  $("prev").addEventListener("click",prev);
+
+  function rebuild(){
+    const t=T();
+    const prevG=ayahs[idx];
+    const r=parse($("verses").value);
+    ayahs=r.ayahs;
+    if(prevG!==undefined){const j=ayahs.indexOf(prevG);if(j>=0)idx=j;}
+    if(idx>=ayahs.length)idx=0;
+    $("count").textContent=t.count(ayahs.length);
+    const ec=$("errors");ec.textContent="";
+    for(const e of r.errors){const s=document.createElement("span");s.className="err";s.textContent=t.notFound(e);ec.appendChild(s);}
+    if(r.capped){const s=document.createElement("span");s.className="err";s.textContent=t.capped(MAX_AYAHS);ec.appendChild(s);}
+    const list=$("list");list.textContent="";
+    if(!ayahs.length){const li=document.createElement("li");li.className="empty";li.textContent=t.empty;list.appendChild(li);
+      audio.pause();}
+    ayahs.forEach((g,i)=>{const [s,a]=fromGlobal(g);
+      const li=document.createElement("li");li.dataset.i=i;li.tabIndex=0;
+      const n=document.createElement("span");n.className="idx";n.textContent=i+1;
+      const k=document.createElement("span");k.className="key";k.textContent=`${s}:${a}`;
+      const nm=document.createElement("span");nm.className="name";nm.textContent=NAMES[s-1];
+      li.append(n,k,nm);list.appendChild(li);});
+    store.set("al.verses",$("verses").value);store.set("al.reciter",sel.value);store.set("al.reps",String(reps()));
+    if(ayahs.length&&playing()&&loadedKey!==urlFor(sel.value,ayahs[idx])){const t0=0;loadCurrent();audio.currentTime=t0;doPlay();}
+    else if(ayahs.length&&!playing())loadCurrent();
+    paintPlayer();
+  }
+  $("list").addEventListener("click",e=>{const li=e.target.closest("li[data-i]");if(li)go(+li.dataset.i,true);});
+  $("list").addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){const li=e.target.closest("li[data-i]");if(li){e.preventDefault();go(+li.dataset.i,true);}}});
+
+  let deb=null;
+  $("verses").addEventListener("input",()=>{clearTimeout(deb);deb=setTimeout(rebuild,350);});
+  sel.addEventListener("change",rebuild);
+  $("repeats").addEventListener("input",()=>{store.set("al.reps",String(reps()));paintPlayer();});
+  $("repDown").addEventListener("click",()=>{$("repeats").value=Math.max(1,reps()-1);store.set("al.reps",String(reps()));paintPlayer();});
+  $("repUp").addEventListener("click",()=>{$("repeats").value=Math.min(50,reps()+1);store.set("al.reps",String(reps()));paintPlayer();});
+
+  function applyLang(){
+    const t=T();
+    document.documentElement.lang=lang;
+    document.querySelectorAll("[data-i18n]").forEach(el=>{el.textContent=t[el.dataset.i18n];});
+    document.querySelectorAll("[data-i18n-html]").forEach(el=>{el.innerHTML=t[el.dataset.i18nHtml];});
+    $("repDown").setAttribute("aria-label",t.fewer);$("repUp").setAttribute("aria-label",t.more);$("repeats").setAttribute("aria-label",t.times);
+    $("langEn").setAttribute("aria-pressed",String(lang==="en"));$("langTa").setAttribute("aria-pressed",String(lang==="ta"));
+    store.set("al.lang",lang);
+    rebuild();paintStatus();
+  }
+  $("langEn").addEventListener("click",()=>{lang="en";applyLang();});
+  $("langTa").addEventListener("click",()=>{lang="ta";applyLang();});
+
+  applyLang();
+}
+if(typeof module!=="undefined")module.exports={parse,fromGlobal,urlFor,TOTAL};
+</script>
+</body>
+</html>
